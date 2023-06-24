@@ -1,0 +1,269 @@
+<!--
+  Criado por Giovani Da Cruz
+  https://giovanidacruz.com.br/jogo-da-velha/
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Jogo da Velha</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 50px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-gap: 5px;
+      width: 300px;
+      margin-bottom: 10px;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      background-color: lightgray;
+
+      cursor: pointer;
+    }
+
+    .menu {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .menu button {
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      background-color: dodgerblue;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Jogo da Velha</h1>
+    <h2><a href="https://giovanidacruz.com.br/jogo-da-velha/" target="_blank">Criado por Giovani Da Cruz</a></h2>
+    
+    <div class="menu">
+      <button onclick="resetGame()">Reiniciar</button>
+    </div>
+
+    <div class="board">
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+    </div>
+  </div>
+
+  <script>
+    // Obter todas as células do tabuleiro
+    const cells = Array.from(document.querySelectorAll('.cell'));
+    
+    // Definir o tabuleiro
+    const board = [
+      ['', '', ''],
+      ['', '', ''],
+      ['', '', '']
+    ];
+
+    // Definir o jogador atual
+    let currentPlayer = 'X';
+
+    // Adicionar evento de clique a cada célula
+    cells.forEach((cell, index) => {
+      cell.addEventListener('click', () => {
+        
+        // Verificar se a célula já está preenchida
+        if (cell.textContent === '') {
+              
+          // Obter a posição da célula no tabuleiro
+          const row = Math.floor(index / 3);
+          const col = index % 3;
+
+          // Preencher a célula com o símbolo do jogador atual
+          cell.textContent = currentPlayer;
+          board[row][col] = currentPlayer;
+
+          // Verificar o resultado do jogo
+          if (checkWin(currentPlayer)) {
+            setTimeout(() => {
+              alert(`Jogador ${currentPlayer} venceu!`);
+              resetGame();
+            }, 100);
+            return;
+          } else if (checkTie()) {
+            setTimeout(() => {
+              alert('O jogo empatou!');
+              resetGame();
+            }, 100);
+            return;
+          }
+
+          // Alternar para o próximo jogador
+          currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+
+          // Deixar o computador jogar
+          if (currentPlayer === 'O') {
+            setTimeout(computerPlay, 100);
+          }
+        }
+      });
+    });
+
+    // Verificar se um jogador venceu
+    function checkWin(player) {
+      for (let i = 0; i < 3; i++) {
+        if (
+          board[i][0] === player && board[i][1] === player && board[i][2] === player ||
+          board[0][i] === player && board[1][i] === player && board[2][i] === player
+        ) {
+          return true;
+        }
+      }
+
+      if (
+        board[0][0] === player && board[1][1] === player && board[2][2] === player ||
+        board[0][2] === player && board[1][1] === player && board[2][0] === player
+      ) {
+        return true;
+      }
+
+      return false;
+    }
+
+    // Verificar se houve um empate
+    function checkTie() {
+      for (let row of board) {
+        if (row.includes('')) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Reiniciar o jogo
+    function resetGame() {
+      board.forEach(row => row.fill(''));
+      cells.forEach(cell => cell.textContent = '');
+      currentPlayer = 'X';
+    }
+
+    // Permitir que o computador faça uma jogada
+    function computerPlay() {
+      let bestScore = -Infinity;
+      let bestMove;
+
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          if (board[i][j] === '') {
+            board[i][j] = 'O';
+            const currentScore = minimax(board, 0, false);
+            board[i][j] = '';
+            if (currentScore > bestScore) {
+              bestScore = currentScore;
+              bestMove = { row: i, col: j };
+            }
+          }
+        }
+      }
+
+      const { row, col } = bestMove;
+      board[row][col] = 'O';
+      cells[row * 3 + col].textContent = 'O';
+
+      if (checkWin('O')) {
+        if (!checkTie()) {
+          setTimeout(() => {
+            alert('O computador venceu!');
+            resetGame();
+          }, 100);
+        }
+        return;
+      } else if (checkTie()) {
+        setTimeout(() => {
+          alert('O jogo empatou!');
+          resetGame();
+        }, 100);
+        return;
+      }
+
+      // Alternar para o próximo jogador
+      currentPlayer = 'X';
+    }
+
+    // Algoritmo minimax para encontrar a melhor jogada
+    function minimax(board, depth, isMaximizing) {
+      const scores = {
+        X: -1,
+        O: 1,
+        tie: 0
+      };
+
+      if (checkWin('X')) {
+        return scores.X;
+      } else if (checkWin('O')) {
+        return scores.O;
+      } else if (checkTie()) {
+        return scores.tie;
+      }
+
+      if (isMaximizing) {
+        let bestScore = -Infinity;
+
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            if (board[i][j] === '') {
+              board[i][j] = 'O';
+              const currentScore = minimax(board, depth + 1, false);
+              board[i][j] = '';
+              bestScore = Math.max(bestScore, currentScore);
+            }
+          }
+        }
+
+        return bestScore;
+      } else {
+        let bestScore = Infinity;
+
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            if (board[i][j] === '') {
+              board[i][j] = 'X';
+              const currentScore = minimax(board, depth + 1, true);
+              board[i][j] = '';
+              bestScore = Math.min(bestScore, currentScore);
+            }
+          }
+        }
+
+        return bestScore;
+      }
+    }
+  </script>
+</body>
+</html>
